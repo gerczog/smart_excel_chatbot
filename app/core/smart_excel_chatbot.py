@@ -1,5 +1,5 @@
 """
-Refactored Smart Excel Chatbot with modular architecture
+Рефакторений Smart Excel Chatbot з модульною архітектурою
 """
 import os
 from typing import Dict, List, Optional, Any
@@ -17,47 +17,47 @@ load_dotenv()
 
 class SmartExcelChatbot:
     """
-    Умный чат-бот для работы с Excel файлами
-    Рефакторенная версия с модульной архитектурой
+    Розумний чат-бот для роботи з Excel файлами
+    Рефакторена версія з модульною архітектурою
     """
 
     def __init__(self, file_path: str):
         """
-        Инициализация чат-бота
+        Ініціалізація чат-бота
         
         Args:
-            file_path: Путь к Excel файлу
+            file_path: Шлях до Excel файлу
         """
-        # Проверяем API ключ
+        # Перевіряємо API ключ
         if not os.getenv("OPENAI_API_KEY"):
-            raise ValueError("OPENAI_API_KEY не установлен. Установите его в .env файле.")
+            raise ValueError("OPENAI_API_KEY не встановлено. Встановіть його у .env файлі.")
 
-        # Инициализируем LLM
+        # Ініціалізуємо LLM
         self.llm = ChatOpenAI(temperature=0, model="gpt-4o-mini")
         
-        # Инициализируем компоненты
+        # Ініціалізуємо компоненти
         self.data_processor = ExcelDataProcessor(file_path)
         self.data_analyzer = None
         self.prompt_generator = None
         self.query_handler = None
         
-        # Загружаем и анализируем данные
+        # Завантажуємо та аналізуємо дані
         self._initialize_components()
     
     def _initialize_components(self):
-        """Инициализирует все компоненты системы"""
-        # Загружаем данные
+        """Ініціалізує всі компоненти системи"""
+        # Завантажуємо дані
         self.data_processor.load_all_sheets(self.llm)
         self.data_processor.create_combined_dataframe(self.llm)
         
-        # Создаем анализатор данных
+        # Створюємо аналізатор даних
         self.data_analyzer = DataAnalyzer(self.data_processor.dataframes)
         context = self.data_analyzer.create_enhanced_context()
         
-        # Создаем генератор промптов
+        # Створюємо генератор промптів
         self.prompt_generator = PromptGenerator(context, self.data_processor.dataframes)
         
-        # Создаем обработчик запросов
+        # Створюємо обробник запитів
         self.query_handler = QueryHandler(
             llm=self.llm,
             agents=self.data_processor.agents,
@@ -68,67 +68,67 @@ class SmartExcelChatbot:
     
     def chat(self, query: str) -> str:
         """
-        Основной метод для обработки пользовательских запросов
+        Основний метод для обробки користувацьких запитів
         
         Args:
-            query: Пользовательский запрос
+            query: Користувацький запит
             
         Returns:
-            Ответ на запрос
+            Відповідь на запит
         """
         return self.query_handler.chat(query)
     
     def generate_file_summary(self) -> str:
         """
-        Генерирует сводку по файлу
+        Генерує зведення по файлу
         
         Returns:
-            Сводная информация о файле
+            Зведена інформація про файл
         """
         return self.query_handler.generate_file_summary()
     
     def get_file_info(self) -> Dict[str, Any]:
         """
-        Возвращает информацию о файле
+        Повертає інформацію про файл
         
         Returns:
-            Словарь с информацией о файле
+            Словник з інформацією про файл
         """
         return self.data_analyzer.get_file_info()
     
     def get_detailed_analysis(self) -> Dict[str, Any]:
         """
-        Возвращает детальный анализ структуры данных
+        Повертає детальний аналіз структури даних
         
         Returns:
-            Подробный анализ данных
+            Докладний аналіз даних
         """
         return self.data_analyzer.context
     
     def get_sheet_summary(self, sheet_name: str = None) -> Dict[str, Any]:
         """
-        Возвращает сводку по листу/листам
+        Повертає зведення по аркушу/аркушах
         
         Args:
-            sheet_name: Название листа (опционально)
+            sheet_name: Назва аркуша (опціонально)
             
         Returns:
-            Сводная информация
+            Зведена інформація
         """
         return self.data_analyzer.get_sheet_summary(sheet_name)
     
     def get_available_regions(self) -> List[str]:
         """
-        Возвращает список доступных регионов
+        Повертає список доступних регіонів
         
         Returns:
-            Список названий регионов
+            Список назв регіонів
         """
         return self.data_processor.get_available_regions()
     
     def get_available_dates(self) -> List[str]:
         """
-        Возвращает список доступных дат
+        Повертає список доступних дат
         
         Returns:
             Список дат
@@ -137,67 +137,67 @@ class SmartExcelChatbot:
     
     def get_date_summary(self) -> Dict[str, List[str]]:
         """
-        Возвращает сводку по датам
+        Повертає зведення по датах
         
         Returns:
-            Сводка дат по листам
+            Зведення дат по аркушах
         """
         return self.data_analyzer.get_date_summary()
     
     def query_specific_region(self, region: str, query: str) -> str:
         """
-        Выполняет запрос по конкретному региону
+        Виконує запит по конкретному регіону
         
         Args:
-            region: Название региона
-            query: Пользовательский запрос
+            region: Назва регіону
+            query: Користувацький запит
             
         Returns:
-            Ответ по данным региона
+            Відповідь по даних регіону
         """
         return self.query_handler.query_specific_region(region, query)
     
     def get_query_suggestions(self, query: str) -> List[str]:
         """
-        Получает предложения запросов
+        Отримує пропозиції запитів
         
         Args:
-            query: Текущий запрос пользователя
+            query: Поточний запит користувача
             
         Returns:
-            Список предложений
+            Список пропозицій
         """
         return self.query_handler.get_query_suggestions(query)
     
-    # Методы для обратной совместимости с оригинальным API
+    # Методи для зворотної сумісності з оригінальним API
     def get_context(self) -> Dict[str, Any]:
-        """Возвращает контекст для обратной совместимости"""
+        """Повертає контекст для зворотної сумісності"""
         return self.data_analyzer.context if self.data_analyzer else {}
     
     @property
     def dataframes(self) -> Dict[str, Any]:
-        """Возвращает DataFrame'ы для обратной совместимости"""
+        """Повертає DataFrame'и для зворотної сумісності"""
         return self.data_processor.dataframes
     
     @property
     def combined_df(self):
-        """Возвращает объединенный DataFrame для обратной совместимости"""
+        """Повертає об'єднаний DataFrame для зворотної сумісності"""
         return self.data_processor.combined_df
     
     @property
     def sheet_names(self) -> List[str]:
-        """Возвращает названия листов для обратной совместимости"""
+        """Повертає назви аркушів для зворотної сумісності"""
         return self.data_processor.sheet_names
 
 
 def create_smart_excel_chatbot(file_path: str) -> SmartExcelChatbot:
     """
-    Фабричная функция для создания экземпляра чат-бота
+    Фабрична функція для створення екземпляра чат-бота
     
     Args:
-        file_path: Путь к Excel файлу
+        file_path: Шлях до Excel файлу
         
     Returns:
-        Экземпляр SmartExcelChatbot
+        Екземпляр SmartExcelChatbot
     """
     return SmartExcelChatbot(file_path)
