@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 Excel Smart Chatbot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 1000px;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: #f8f9fa;
+            border-right: 1px solid #e9ecef;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #fafafa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message.bot .message-content {
+            background: white;
+            border: 1px solid #e9ecef;
+            color: #333;
+        }
+
+        .message-time {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .chat-input {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .chat-input input:focus {
+            border-color: #667eea;
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.2s;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .file-info {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .file-info h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .file-info p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .regions-list {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .regions-list h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .region-item {
+            background: #f8f9fa;
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .examples {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .examples h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .example-item {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #333;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .example-item:hover {
+            background: #e9ecef;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        
+        .file-upload {
+            margin-top: 15px;
+        }
+        
+        .file-input {
+            margin-bottom: 10px;
+            width: 100%;
+        }
+        
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+        
+        .upload-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .upload-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .file-input:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .disabled-message {
+            color: #666;
+            font-size: 13px;
+            margin-top: 10px;
+            font-style: italic;
+        }
+        
+        .upload-status {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                width: 95%;
+                height: 90vh;
+            }
+            
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: 200px;
+                border-right: none;
+                border-bottom: 1px solid #e9ecef;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Excel Smart Chatbot</h1>
+            <div class="status" id="status">Завантаження...</div>
+        </div>
+        
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="file-info" id="fileInfo">
+                    <h3>📊 Інформація про файл</h3>
+                    <div class="file-info-content">
+                        <p>Файл не завантажено</p>
+                    </div>
+                    <div class="file-upload">
+                        <div id="changeFileSection">
+                            <form id="uploadForm" enctype="multipart/form-data">
+                                <input type="file" id="excelFile" accept=".xlsx, .xls" class="file-input" {% if not allow_change_file %}disabled{% endif %}>
+                                <button type="button" id="uploadBtn" class="upload-btn" {% if not allow_change_file %}disabled{% endif %}>Завантажити новий файл</button>
+                            </form>
+                            <button type="button" id="useDefaultBtn" class="upload-btn" style="margin-top: 10px; background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);" {% if not allow_change_file %}disabled{% endif %}>Використовувати стандартний файл ({{ default_file }})</button>
+                            {% if not allow_change_file %}
+                            <p id="changeFileDisabledMsg" class="disabled-message" style="display: block;">Зміна файлу відключена.</p>
+                            {% else %}
+                            <p id="changeFileDisabledMsg" class="disabled-message" style="display: none;">Зміна файлу відключена.</p>
+                            {% endif %}
+                        </div>
+                        
+                        <div id="newChatSection">
+                            <button type="button" id="newChatBtn" class="upload-btn" style="margin-top: 10px; background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);" {% if not allow_new_chat %}disabled{% endif %}>Почати новий чат</button>
+                            {% if not allow_new_chat %}
+                            <p id="newChatDisabledMsg" class="disabled-message" style="display: block;">Новий чат відключений.</p>
+                            {% else %}
+                            <p id="newChatDisabledMsg" class="disabled-message" style="display: none;">Новий чат відключений.</p>
+                            {% endif %}
+                        </div>
+                        
+                        <div style="margin-top: 20px; border-top: 1px solid #e9ecef; padding-top: 15px;">
+                            <h4 style="margin-bottom: 10px; font-size: 14px;">Керування функціями:</h4>
+                            <button type="button" id="toggleChangeFileBtn" class="upload-btn" style="margin-bottom: 10px; background: linear-gradient(135deg, #2196F3 0%, #0D47A1 100%);">
+                                {% if allow_change_file %}Відключити{% else %}Включити{% endif %} зміну файлу
+                            </button>
+                            <button type="button" id="toggleNewChatBtn" class="upload-btn" style="background: linear-gradient(135deg, #2196F3 0%, #0D47A1 100%);">
+                                {% if allow_new_chat %}Відключити{% else %}Включити{% endif %} новий чат
+                            </button>
+                        </div>
+                        
+                        <div id="uploadStatus" class="upload-status"></div>
+                    </div>
+                </div>
+                
+                <div class="regions-list" id="regionsList">
+                    <h3>🏙️ Доступні регіони</h3>
+                    <p>Немає даних</p>
+                </div>
+                
+                <div class="examples" id="examples">
+                    <h3>💡 Приклади запитів</h3>
+                    <p>Завантаження...</p>
+                </div>
+            </div>
+            
+            <div class="chat-area">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message bot">
+                        <div class="message-content">
+                            Привіт! Я умний чат-бот для роботи з Excel файлами. 
+                            Я можу аналізувати дані, порівнювати регіони та відповідати на ваші запитання.
+                            Ви можете використовувати стандартний файл або завантажити свій власний Excel файл 
+                            через форму в бічній панелі. Після завантаження нового файлу я автоматично 
+                            проаналізую його та підготуюсь відповідати на ваші запитання.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Обробка запиту...</p>
+                </div>
+                
+                <div class="chat-input">
+                    <div class="input-group">
+                        <input type="text" id="messageInput" placeholder="Введіть ваш запит..." disabled>
+                        <button class="send-btn" id="sendBtn" disabled>Надіслати</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let chatbotInitialized = false;
+        // Store the default file path from the server
+        const defaultFilePath = '{{ default_file }}';
+        
+        // Елементи DOM
+        const statusEl = document.getElementById('status');
+        const fileInfoEl = document.getElementById('fileInfo');
+        const regionsListEl = document.getElementById('regionsList');
+        const examplesEl = document.getElementById('examples');
+        const chatMessagesEl = document.getElementById('chatMessages');
+        const messageInputEl = document.getElementById('messageInput');
+        const sendBtnEl = document.getElementById('sendBtn');
+        const loadingEl = document.getElementById('loading');
+        const toggleChangeFileBtnEl = document.getElementById('toggleChangeFileBtn');
+        const toggleNewChatBtnEl = document.getElementById('toggleNewChatBtn');
+        const changeFileSectionEl = document.getElementById('changeFileSection');
+        const newChatSectionEl = document.getElementById('newChatSection');
+        const excelFileEl = document.getElementById('excelFile');
+        const uploadBtnEl = document.getElementById('uploadBtn');
+        const uploadStatusEl = document.getElementById('uploadStatus');
+        
+        // Ініціалізація чат-бота
+        async function initChatbot() {
+            try {
+                statusEl.textContent = 'Ініціалізація чат-бота...';
+                
+                const response = await fetch('/init', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        file_path: defaultFilePath
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    chatbotInitialized = true;
+                    statusEl.textContent = 'Чат-бот готовий до роботи';
+                    updateFileInfo(data.file_info);
+                    enableChat();
+                    addMessage('bot', 'Чудово! Файл завантажено. Тепер ви можете задавати запитання про дані по регіонах.');
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                statusEl.textContent = 'Помилка ініціалізації';
+                addMessage('bot', `Помилка: ${error.message}`);
+            }
+        }
+        
+        // Оновлення інформації про файл
+        function updateFileInfo(info) {
+            // Обновляем только информацию о файле, не трогая кнопки
+            const fileInfoContent = fileInfoEl.querySelector('.file-info-content');
+            if (fileInfoContent) {
+                fileInfoContent.innerHTML = `
+                    <p><strong>Файл:</strong> ${info.file_path}</p>
+                    <p><strong>Листів:</strong> ${info.total_sheets}</p>
+                    <p><strong>Регіони:</strong> ${info.sheets.length}</p>
+                `;
+            }
+            
+            regionsListEl.innerHTML = `
+                <h3>🏙️ Доступні регіони</h3>
+                ${info.sheets.map(region => `<div class="region-item">${region}</div>`).join('')}
+            `;
+        }
+        
+        // Завантаження прикладів
+        async function loadExamples() {
+            try {
+                const response = await fetch('/examples');
+                const data = await response.json();
+                
+                if (data.success) {
+                    examplesEl.innerHTML = `
+                        <h3>💡 Приклади запитів</h3>
+                        ${data.examples.map(example => 
+                            `<div class="example-item" onclick="useExample('${example}')">${example}</div>`
+                        ).join('')}
+                    `;
+                }
+            } catch (error) {
+                examplesEl.innerHTML = '<h3>💡 Приклади запитів</h3><p>Помилка завантаження</p>';
+            }
+        }
+        
+        // Використання прикладу
+        function useExample(example) {
+            if (chatbotInitialized) {
+                messageInputEl.value = example;
+                sendMessage();
+            }
+        }
+        
+        // Увімкнення чату
+        function enableChat() {
+            messageInputEl.disabled = false;
+            sendBtnEl.disabled = false;
+            messageInputEl.focus();
+        }
+        
+        // Додавання повідомлення
+        function addMessage(type, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            const time = new Date().toLocaleTimeString('uk-UA', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            
+            messageDiv.innerHTML = `
+                <div class="message-content">
+                    ${content}
+                    <div class="message-time">${time}</div>
+                </div>
+            `;
+            
+            chatMessagesEl.appendChild(messageDiv);
+            chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+        }
+        
+        // Відправка повідомлення
+        async function sendMessage() {
+            const message = messageInputEl.value.trim();
+            if (!message || !chatbotInitialized) return;
+            
+            // Додаємо повідомлення користувача
+            addMessage('user', message);
+            messageInputEl.value = '';
+            
+            // Показуємо завантаження
+            loadingEl.classList.add('show');
+            
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query: message })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    addMessage('bot', data.response);
+                } else {
+                    addMessage('bot', `Помилка: ${data.message}`);
+                }
+            } catch (error) {
+                addMessage('bot', `Помилка з'єднання: ${error.message}`);
+            } finally {
+                loadingEl.classList.remove('show');
+            }
+        }
+        
+        // Завантаження файлу
+        async function uploadFile() {
+            const fileInput = excelFileEl;
+            if (!fileInput.files || fileInput.files.length === 0) {
+                uploadStatusEl.textContent = 'Будь ласка, виберіть файл для завантаження';
+                addMessage('bot', 'Будь ласка, виберіть файл для завантаження');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+                uploadStatusEl.textContent = 'Підтримуються тільки файли Excel (.xlsx або .xls)';
+                addMessage('bot', 'Будь ласка, виберіть файл Excel (.xlsx або .xls)');
+                return;
+            }
+            
+            // Створюємо FormData
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            // Показуємо завантаження
+            loadingEl.classList.add('show');
+            statusEl.textContent = 'Завантаження файлу...';
+            uploadStatusEl.textContent = `Завантаження файлу ${file.name}...`;
+            uploadBtnEl.disabled = true;
+            
+            try {
+                // Завантажуємо файл
+                uploadStatusEl.textContent = 'Передача файлу на сервер...';
+                const uploadResponse = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const uploadData = await uploadResponse.json();
+                
+                if (uploadData.success) {
+                    statusEl.textContent = 'Ініціалізація чат-бота з новим файлом...';
+                    uploadStatusEl.textContent = 'Файл завантажено. Ініціалізація чат-бота...';
+                    addMessage('bot', `Файл ${file.name} успішно завантажено. Ініціалізація чат-бота...`);
+                    
+                    // Ініціалізуємо чат-бота з новим файлом
+                    uploadStatusEl.textContent = 'Аналіз даних та підготовка моделі...';
+                    const initResponse = await fetch('/init', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            file_path: uploadData.file_path
+                        })
+                    });
+                    
+                    const initData = await initResponse.json();
+                    
+                    if (initData.success) {
+                        chatbotInitialized = true;
+                        statusEl.textContent = 'Чат-бот готовий до роботи';
+                        uploadStatusEl.textContent = 'Файл успішно оброблено!';
+                        updateFileInfo(initData.file_info);
+                        enableChat();
+                        addMessage('bot', 'Чудово! Новий файл завантажено та оброблено. Тепер ви можете задавати запитання про дані по регіонах.');
+                        
+                        // Очищаємо поле вибору файлу
+                        fileInput.value = '';
+                        
+                        // Через 5 секунд прибираємо статус
+                        setTimeout(() => {
+                            uploadStatusEl.textContent = '';
+                        }, 5000);
+                    } else {
+                        throw new Error(initData.message);
+                    }
+                } else {
+                    throw new Error(uploadData.message);
+                }
+            } catch (error) {
+                statusEl.textContent = 'Помилка завантаження';
+                uploadStatusEl.textContent = `Помилка: ${error.message}`;
+                addMessage('bot', `Помилка: ${error.message}`);
+            } finally {
+                loadingEl.classList.remove('show');
+                uploadBtnEl.disabled = false;
+            }
+        }
+        
+        // Функція для використання стандартного файлу
+        async function useDefaultFile() {
+            // Показуємо завантаження
+            loadingEl.classList.add('show');
+            statusEl.textContent = 'Ініціалізація чат-бота зі стандартним файлом...';
+            uploadStatusEl.textContent = 'Завантаження стандартного файлу...';
+            
+            try {
+                const response = await fetch('/init', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        file_path: defaultFilePath
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    chatbotInitialized = true;
+                    statusEl.textContent = 'Чат-бот готовий до роботи';
+                    uploadStatusEl.textContent = 'Стандартний файл успішно завантажено!';
+                    updateFileInfo(data.file_info);
+                    enableChat();
+                    addMessage('bot', 'Чудово! Стандартний файл завантажено. Тепер ви можете задавати запитання про дані по регіонах.');
+                    
+                    // Через 5 секунд прибираємо статус
+                    setTimeout(() => {
+                        uploadStatusEl.textContent = '';
+                    }, 5000);
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                statusEl.textContent = 'Помилка ініціалізації';
+                uploadStatusEl.textContent = `Помилка: ${error.message}`;
+                addMessage('bot', `Помилка: ${error.message}`);
+            } finally {
+                loadingEl.classList.remove('show');
+            }
+        }
+        
+        // Функція для початку нового чату (реініціалізація моделі)
+        async function startNewChat() {
+            if (!chatbotInitialized) {
+                uploadStatusEl.textContent = 'Спочатку потрібно ініціалізувати чат-бот';
+                addMessage('bot', 'Спочатку потрібно завантажити файл');
+                return;
+            }
+            
+            // Показуємо завантаження
+            loadingEl.classList.add('show');
+            statusEl.textContent = 'Реініціалізація чат-бота...';
+            uploadStatusEl.textContent = 'Початок нового чату...';
+            
+            try {
+                const response = await fetch('/reinit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusEl.textContent = 'Чат-бот готовий до роботи';
+                    uploadStatusEl.textContent = 'Новий чат успішно розпочато!';
+                    
+                    // Очищаємо історію чату
+                    chatMessagesEl.innerHTML = '';
+                    
+                    // Додаємо початкове повідомлення
+                    addMessage('bot', 'Новий чат розпочато. Історія попередніх повідомлень очищена. Ви можете задавати нові запитання.');
+                    
+                    // Через 5 секунд прибираємо статус
+                    setTimeout(() => {
+                        uploadStatusEl.textContent = '';
+                    }, 5000);
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                statusEl.textContent = 'Помилка реініціалізації';
+                uploadStatusEl.textContent = `Помилка: ${error.message}`;
+                addMessage('bot', `Помилка: ${error.message}`);
+            } finally {
+                loadingEl.classList.remove('show');
+            }
+        }
+        
+        // Функція для перемикання функції зміни файлу
+        async function toggleChangeFile() {
+            // Показуємо завантаження
+            loadingEl.classList.add('show');
+            statusEl.textContent = 'Зміна налаштувань...';
+            
+            try {
+                const response = await fetch('/toggle-change-file', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusEl.textContent = 'Налаштування змінено';
+                    uploadStatusEl.textContent = data.message;
+                    
+                    // Оновлюємо інтерфейс
+                    if (data.enabled) {
+                        // Функція включена
+                        const excelFileEl = document.getElementById('excelFile');
+                        const uploadBtnEl = document.getElementById('uploadBtn');
+                        const useDefaultBtnEl = document.getElementById('useDefaultBtn');
+                        const disabledMsgEl = document.getElementById('changeFileDisabledMsg');
+                        
+                        if (excelFileEl) excelFileEl.disabled = false;
+                        if (uploadBtnEl) uploadBtnEl.disabled = false;
+                        if (useDefaultBtnEl) useDefaultBtnEl.disabled = false;
+                        if (disabledMsgEl) disabledMsgEl.style.display = 'none';
+                        
+                        toggleChangeFileBtnEl.textContent = 'Відключити зміну файлу';
+                    } else {
+                        // Функція відключена
+                        const excelFileEl = document.getElementById('excelFile');
+                        const uploadBtnEl = document.getElementById('uploadBtn');
+                        const useDefaultBtnEl = document.getElementById('useDefaultBtn');
+                        const disabledMsgEl = document.getElementById('changeFileDisabledMsg');
+                        
+                        if (excelFileEl) excelFileEl.disabled = true;
+                        if (uploadBtnEl) uploadBtnEl.disabled = true;
+                        if (useDefaultBtnEl) useDefaultBtnEl.disabled = true;
+                        if (disabledMsgEl) disabledMsgEl.style.display = 'block';
+                        
+                        toggleChangeFileBtnEl.textContent = 'Включити зміну файлу';
+                    }
+                    
+                    // Через 5 секунд прибираємо статус
+                    setTimeout(() => {
+                        uploadStatusEl.textContent = '';
+                    }, 5000);
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                statusEl.textContent = 'Помилка зміни налаштувань';
+                uploadStatusEl.textContent = `Помилка: ${error.message}`;
+            } finally {
+                loadingEl.classList.remove('show');
+            }
+        }
+        
+        // Функція для перемикання функції нового чату
+        async function toggleNewChat() {
+            // Показуємо завантаження
+            loadingEl.classList.add('show');
+            statusEl.textContent = 'Зміна налаштувань...';
+            
+            try {
+                const response = await fetch('/toggle-new-chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusEl.textContent = 'Налаштування змінено';
+                    uploadStatusEl.textContent = data.message;
+                    
+                    // Оновлюємо інтерфейс
+                    if (data.enabled) {
+                        // Функція включена
+                        const newChatBtnEl = document.getElementById('newChatBtn');
+                        const disabledMsgEl = document.getElementById('newChatDisabledMsg');
+                        
+                        if (newChatBtnEl) newChatBtnEl.disabled = false;
+                        if (disabledMsgEl) disabledMsgEl.style.display = 'none';
+                        
+                        toggleNewChatBtnEl.textContent = 'Відключити новий чат';
+                    } else {
+                        // Функція відключена
+                        const newChatBtnEl = document.getElementById('newChatBtn');
+                        const disabledMsgEl = document.getElementById('newChatDisabledMsg');
+                        
+                        if (newChatBtnEl) newChatBtnEl.disabled = true;
+                        if (disabledMsgEl) disabledMsgEl.style.display = 'block';
+                        
+                        toggleNewChatBtnEl.textContent = 'Включити новий чат';
+                    }
+                    
+                    // Через 5 секунд прибираємо статус
+                    setTimeout(() => {
+                        uploadStatusEl.textContent = '';
+                    }, 5000);
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                statusEl.textContent = 'Помилка зміни налаштувань';
+                uploadStatusEl.textContent = `Помилка: ${error.message}`;
+            } finally {
+                loadingEl.classList.remove('show');
+            }
+        }
+
+        // Обробники подій
+        sendBtnEl.addEventListener('click', sendMessage);
+        
+        messageInputEl.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        uploadBtnEl.addEventListener('click', uploadFile);
+        
+        // Додаємо обробник для кнопки стандартного файлу
+        document.getElementById('useDefaultBtn').addEventListener('click', useDefaultFile);
+        
+        // Додаємо обробник для кнопки нового чату
+        document.getElementById('newChatBtn').addEventListener('click', startNewChat);
+        
+        // Додаємо обробники для кнопок перемикання функцій
+        toggleChangeFileBtnEl.addEventListener('click', toggleChangeFile);
+        toggleNewChatBtnEl.addEventListener('click', toggleNewChat);
+        
+        // Ініціалізація при завантаженні
+        document.addEventListener('DOMContentLoaded', () => {
+            loadExamples();
+            initChatbot();
+        });
+    </script>
+</body>
+</html> 
