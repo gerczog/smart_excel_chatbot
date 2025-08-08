@@ -32,6 +32,9 @@ class SmartExcelChatbot:
         if not os.getenv("OPENAI_API_KEY"):
             raise ValueError("OPENAI_API_KEY не встановлено. Встановіть його у .env файлі.")
 
+        # Зберігаємо шлях до файлу
+        self.file_path = file_path
+
         # Ініціалізуємо LLM
         self.llm = ChatOpenAI(temperature=0, model="gpt-4o-mini")
         
