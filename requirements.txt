@@ -9,3 +9,4 @@ langchain-experimental>=0.0.10
 langchain-openai>=0.0.2
 openai>=1.0.0
 matplotlib>=3.4.0
+werkzeug>=2.0.0
