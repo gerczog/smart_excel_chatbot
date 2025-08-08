@@ -47,6 +47,9 @@ class ExcelDataProcessor:
                     date_format='%Y-%m-%d'
                 )
                 if not df.empty:
+                    # Убедимся, что колонка datetime правильно обработана как datetime
+                    if 'datetime' in df.columns and df['datetime'].dtype == 'object':
+                        df['datetime'] = pd.to_datetime(df['datetime'], errors='coerce')
                     self.dataframes[sheet_name] = df
                     # Создаем агента для каждого листа
                     self.agents[sheet_name] = create_pandas_dataframe_agent(
