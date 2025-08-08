@@ -473,7 +473,18 @@
                     statusEl.textContent = 'Чат-бот готовий до роботи';
                     updateFileInfo(data.file_info);
                     enableChat();
-                    addMessage('bot', 'Чудово! Файл завантажено. Тепер ви можете задавати запитання про дані по регіонах.');
+                    
+                    // Добавляем техническую информацию в чат
+                    let techInfoMessage = 'Чудово! Файл завантажено. Тепер ви можете задавати запитання про дані по регіонах.<br><br>';
+                    techInfoMessage += '📊 <strong>СВОДКА ФАЙЛА:</strong><br>';
+                    if (data.file_summary) {
+                        techInfoMessage += data.file_summary + '<br><br>';
+                    }
+                    techInfoMessage += 'ℹ️ <strong>ТЕХНИЧЕСКАЯ ИНФОРМАЦИЯ:</strong><br>';
+                    techInfoMessage += `- Листов: ${data.file_info.total_sheets}<br>`;
+                    techInfoMessage += `- Листы: ${data.file_info.sheets.join(', ')}`;
+                    
+                    addMessage('bot', techInfoMessage);
                 } else {
                     throw new Error(data.message);
                 }
@@ -652,7 +663,18 @@
                         uploadStatusEl.textContent = 'Файл успішно оброблено!';
                         updateFileInfo(initData.file_info);
                         enableChat();
-                        addMessage('bot', 'Чудово! Новий файл завантажено та оброблено. Тепер ви можете задавати запитання про дані по регіонах.');
+                        
+                        // Добавляем техническую информацию в чат
+                        let techInfoMessage = 'Чудово! Новий файл завантажено та оброблено. Тепер ви можете задавати запитання про дані по регіонах.<br><br>';
+                        techInfoMessage += '📊 <strong>СВОДКА ФАЙЛА:</strong><br>';
+                        if (initData.file_summary) {
+                            techInfoMessage += initData.file_summary + '<br><br>';
+                        }
+                        techInfoMessage += 'ℹ️ <strong>ТЕХНИЧЕСКАЯ ИНФОРМАЦИЯ:</strong><br>';
+                        techInfoMessage += `- Листов: ${initData.file_info.total_sheets}<br>`;
+                        techInfoMessage += `- Листы: ${initData.file_info.sheets.join(', ')}`;
+                        
+                        addMessage('bot', techInfoMessage);
                         
                         // Очищаємо поле вибору файлу
                         fileInput.value = '';
@@ -703,7 +725,18 @@
                     uploadStatusEl.textContent = 'Стандартний файл успішно завантажено!';
                     updateFileInfo(data.file_info);
                     enableChat();
-                    addMessage('bot', 'Чудово! Стандартний файл завантажено. Тепер ви можете задавати запитання про дані по регіонах.');
+                    
+                    // Добавляем техническую информацию в чат
+                    let techInfoMessage = 'Чудово! Стандартний файл завантажено. Тепер ви можете задавати запитання про дані по регіонах.<br><br>';
+                    techInfoMessage += '📊 <strong>СВОДКА ФАЙЛА:</strong><br>';
+                    if (data.file_summary) {
+                        techInfoMessage += data.file_summary + '<br><br>';
+                    }
+                    techInfoMessage += 'ℹ️ <strong>ТЕХНИЧЕСКАЯ ИНФОРМАЦИЯ:</strong><br>';
+                    techInfoMessage += `- Листов: ${data.file_info.total_sheets}<br>`;
+                    techInfoMessage += `- Листы: ${data.file_info.sheets.join(', ')}`;
+                    
+                    addMessage('bot', techInfoMessage);
                     
                     // Через 5 секунд прибираємо статус
                     setTimeout(() => {

@@ -58,10 +58,14 @@ def init_chatbot():
         # Получаем информацию о файле
         info = chatbot.get_file_info()
         
+        # Генерируем краткое описание файла для пользователя
+        file_summary = chatbot.generate_file_summary()
+        
         return jsonify({
             'success': True,
             'message': 'Чат-бот успешно инициализирован',
-            'file_info': info
+            'file_info': info,
+            'file_summary': file_summary
         })
         
     except Exception as e:
@@ -98,10 +102,14 @@ def reinit_chatbot():
         # Получаем информацию о файле
         info = chatbot.get_file_info()
         
+        # Генерируем краткое описание файла для пользователя
+        file_summary = chatbot.generate_file_summary()
+        
         return jsonify({
             'success': True,
             'message': 'Чат-бот успешно реинициализирован',
-            'file_info': info
+            'file_info': info,
+            'file_summary': file_summary
         })
         
     except Exception as e:
