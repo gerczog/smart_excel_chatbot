@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import re
 from typing import Dict, List, Optional, Tuple, Any
+from functools import lru_cache
 from dotenv import load_dotenv
 from langchain.agents.agent_types import AgentType
 from langchain_experimental.agents.agent_toolkits import create_pandas_dataframe_agent
@@ -172,15 +173,45 @@ class SmartExcelChatbot:
                     }
 
                     # Определяем тип колонки
-                    if pd.api.types.is_datetime64_any_dtype(df[col]):
-                        sheet_info["date_columns"].append(col_str)
-                        col_type = "datetime"
-                    elif pd.api.types.is_numeric_dtype(df[col]):
+                    col_type = "text"  # по умолчанию
+                    
+                    # Сначала проверяем числовые типы
+                    if pd.api.types.is_numeric_dtype(df[col]):
                         sheet_info["numeric_columns"].append(col_str)
                         col_type = "numeric"
+                    # Затем проверяем datetime типы
+                    elif pd.api.types.is_datetime64_any_dtype(df[col]):
+                        sheet_info["date_columns"].append(col_str)
+                        col_type = "datetime"
                     else:
-                        sheet_info["text_columns"].append(col_str)
-                        col_type = "text"
+                        # Для текстовых колонок пытаемся определить, содержат ли они даты
+                        try:
+                            # Проверяем только если это не числовая колонка
+                            sample_data = df[col].dropna().head(10)
+                            if len(sample_data) > 0:
+                                # Проверяем, содержат ли значения паттерны дат
+                                sample_str = str(sample_data.iloc[0])
+                                if (len(sample_str) >= 8 and 
+                                    ('-' in sample_str or '/' in sample_str) and
+                                    any(char.isdigit() for char in sample_str)):
+                                    
+                                    test_conversion = pd.to_datetime(sample_data, errors='coerce')
+                                    # Если больше 80% значений успешно преобразованы - это дата
+                                    if test_conversion.notna().sum() / len(test_conversion) > 0.8:
+                                        sheet_info["date_columns"].append(col_str)
+                                        col_type = "datetime"
+                                    else:
+                                        sheet_info["text_columns"].append(col_str)
+                                        col_type = "text"
+                                else:
+                                    sheet_info["text_columns"].append(col_str)
+                                    col_type = "text"
+                            else:
+                                sheet_info["text_columns"].append(col_str)
+                                col_type = "text"
+                        except:
+                            sheet_info["text_columns"].append(col_str)
+                            col_type = "text"
 
                     # Анализ уникальных значений
                     unique_count = df[col].nunique()
@@ -239,17 +270,24 @@ class SmartExcelChatbot:
 
                     # Для дат - дополнительный анализ
                     elif col_str in sheet_info["date_columns"]:
+                        # Преобразуем колонку в datetime если она еще не datetime
+                        date_series = df[col]
+                        if not pd.api.types.is_datetime64_any_dtype(date_series):
+                            date_series = pd.to_datetime(date_series, errors='coerce')
+                        
                         # Безопасно обрабатываем weekdays_distribution
                         weekdays_dict = {}
-                        if not df[col].empty:
-                            weekdays_series = df[col].dt.day_name().value_counts()
-                            for day, count in weekdays_series.items():
-                                weekdays_dict[str(day)] = int(count)
+                        if not date_series.empty:
+                            valid_dates = date_series.dropna()
+                            if not valid_dates.empty:
+                                weekdays_series = valid_dates.dt.day_name().value_counts()
+                                for day, count in weekdays_series.items():
+                                    weekdays_dict[str(day)] = int(count)
 
                         sheet_info["column_analysis"][col_str] = {
-                            "min_date": str(df[col].min()) if not df[col].empty else None,
-                            "max_date": str(df[col].max()) if not df[col].empty else None,
-                            "date_range_days": int((df[col].max() - df[col].min()).days) if not df[col].empty else 0,
+                            "min_date": str(date_series.min()) if not date_series.empty and date_series.notna().any() else None,
+                            "max_date": str(date_series.max()) if not date_series.empty and date_series.notna().any() else None,
+                            "date_range_days": int((date_series.max() - date_series.min()).days) if not date_series.empty and date_series.notna().any() else 0,
                             "weekdays_distribution": weekdays_dict
                         }
 
@@ -688,12 +726,17 @@ class SmartExcelChatbot:
         # Получаем информацию о доступных данных по месяцам
         date_info = ""
         sample_data_info = ""
+        first_date_col = None  # Сохраняем первую найденную колонку с датами
 
         for sheet_name in relevant_sheets:
             if sheet_name in self.context["sheets_info"]:
                 info = self.context["sheets_info"][sheet_name]
                 if "date_analysis" in info:
                     for date_col, analysis in info["date_analysis"].items():
+                        # Сохраняем первую найденную колонку с датами
+                        if first_date_col is None:
+                            first_date_col = date_col
+                            
                         # Проверяем, есть ли данные за указанный месяц
                         month_year_combinations = analysis.get("month_year_combinations", [])
                         records_per_month = analysis.get("records_per_month", {})
@@ -709,6 +752,7 @@ class SmartExcelChatbot:
                             df = self.dataframes[sheet_name]
                             if date_col in df.columns:
                                 sample_dates = df[date_col].dropna().head(5).tolist()
+
                                 sample_data_info += f"""
         📋 ПРИМЕРЫ ДАННЫХ - {sheet_name}:
         - Колонка даты: '{date_col}'
@@ -730,7 +774,7 @@ class SmartExcelChatbot:
         - Доступные записи по месяцам: {records_per_month}
         """
 
-        if date_info:
+        if date_info and first_date_col:
             return f"""
         📅 ФИЛЬТРАЦИЯ ПО ДАТАМ:
         Запрос касается месяца: {month_num}
@@ -743,25 +787,11 @@ class SmartExcelChatbot:
         1. ВСЕГДА сначала проверяй наличие данных за указанный месяц
         2. Если есть записи за указанный месяц - используй фильтр по дате
         3. Если записей нет - сообщи об этом и предложи альтернативы
-        4. Используй pandas для фильтрации: df[df['{date_col}'].dt.month == {month_num}]
-        5. Или фильтруй по строке: df[df['{date_col}'].str.contains('2024-{month_num}')]
-        6. Для проверки доступных месяцев используй: df['{date_col}'].dt.strftime('%Y-%m').value_counts()
+        4. Используй pandas для фильтрации: df[df['{first_date_col}'].dt.month == {month_num}]
+        5. Или фильтруй по строке: df[df['{first_date_col}'].str.contains('2024-{month_num}')]
+        6. Для проверки доступных месяцев используй: df['{first_date_col}'].dt.strftime('%Y-%m').value_counts()
         7. Всегда проверяй наличие данных перед анализом
         8. Если данных нет, предложи доступные месяцы для анализа
-
-        🔍 ПРИМЕР КОДА ДЛЯ ПРОВЕРКИ:
-        ```python
-        # Проверка доступных месяцев
-        available_months = df['{date_col}'].dt.strftime('%Y-%m').value_counts()
-        print("Доступные месяцы:", available_months)
-
-        # Фильтрация по конкретному месяцу
-        if '{month_num}' in available_months.index:
-            month_filtered_df = df[df['{date_col}'].dt.month == {month_num}]
-            print(f"Найдено {len(month_filtered_df)} записей за месяц {month_num}")
-        else:
-            print(f"Нет данных за месяц {month_num}")
-        ```
         """
 
         return ""
@@ -1031,6 +1061,10 @@ class SmartExcelChatbot:
         - Для проверки доступных дат используй: df['колонка_даты'].dt.strftime('%Y-%m').value_counts()
         - Если данных за указанный период нет, сообщи об этом и предложи альтернативы
         - Всегда показывай примеры доступных дат в ответе
+        - КРИТИЧНО: При фильтрации по месяцам ВСЕГДА сначала создавай отфильтрованный DataFrame:
+          filtered_df = df[df['колонка_даты'].dt.month == номер_месяца]
+        - Затем проверяй размер: if len(filtered_df) > 0:
+        - И только потом выполняй расчеты с filtered_df, НЕ с month_filtered_df или другими неопределенными переменными
         """
 
         return prompt
@@ -1067,7 +1101,21 @@ class SmartExcelChatbot:
                 sheet_name = relevant_sheets[0]
                 if sheet_name in self.agents:
                     print(f"🎯 Анализируем только регион: {sheet_name}")
-                    enhanced_query = f"Контекст: {system_prompt}\n\nЗапрос: {normalized_query}"
+                    # Проверяем, содержит ли запрос упоминания месяцев
+                    month_in_query = self._extract_month_from_query(normalized_query)
+                    month_instructions = ""
+                    if month_in_query:
+                        month_instructions = f"""
+
+КРИТИЧНЫЕ ИНСТРУКЦИИ ДЛЯ ФИЛЬТРАЦИИ ПО МЕСЯЦАМ:
+1. ВСЕГДА сначала создавай отфильтрованный DataFrame: filtered_df = df[df['колонка_даты'].dt.month == {month_in_query}]
+2. Затем проверяй размер: if len(filtered_df) > 0:
+3. Выполняй расчеты только с filtered_df, НЕ используй переменные типа month_filtered_df
+4. Пример расчета средней цены: filtered_df['Ціна (₴)'].mean()
+5. Если данных нет, сообщи об отсутствии данных за указанный месяц
+"""
+                    
+                    enhanced_query = f"Контекст: {system_prompt}\n\nЗапрос: {normalized_query}{month_instructions}"
                     result = self.agents[sheet_name].invoke(enhanced_query)
                     return result['output']
 

@@ -125,7 +125,7 @@ test_demo/
 ### Через Python API
 
 ```python
-from app.utils.smart_excel_chatbot import create_smart_excel_chatbot
+from app.core.smart_excel_chatbot import create_smart_excel_chatbot
 
 # Создаем чат-бота
 chatbot = create_smart_excel_chatbot("data/детальні_продажі_по_регіонах.xlsx")

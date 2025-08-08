@@ -1,10 +1,8 @@
-import logging
-
 from flask import Flask, render_template, request, jsonify
 import os
 import uuid
 from werkzeug.utils import secure_filename
-from app.utils.smart_excel_chatbot import create_smart_excel_chatbot
+from app.core.smart_excel_chatbot import create_smart_excel_chatbot
 import logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
