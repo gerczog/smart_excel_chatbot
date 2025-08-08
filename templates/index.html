@@ -481,8 +481,8 @@
                         techInfoMessage += data.file_summary + '<br><br>';
                     }
                     techInfoMessage += 'ℹ️ <strong>ТЕХНИЧЕСКАЯ ИНФОРМАЦИЯ:</strong><br>';
-                    techInfoMessage += `- Листов: ${data.file_info.total_sheets}<br>`;
-                    techInfoMessage += `- Листы: ${data.file_info.sheets.join(', ')}`;
+                    techInfoMessage += `- Листов: ${data.file_info.total_sheets || 0}<br>`;
+                    techInfoMessage += `- Листы: ${data.file_info.sheet_names && data.file_info.sheet_names.length > 0 ? data.file_info.sheet_names.join(', ') : 'Немає листів'}`;
                     
                     addMessage('bot', techInfoMessage);
                 } else {
@@ -500,15 +500,18 @@
             const fileInfoContent = fileInfoEl.querySelector('.file-info-content');
             if (fileInfoContent) {
                 fileInfoContent.innerHTML = `
-                    <p><strong>Файл:</strong> ${info.file_path}</p>
-                    <p><strong>Листів:</strong> ${info.total_sheets}</p>
-                    <p><strong>Регіони:</strong> ${info.sheets.length}</p>
+                    <p><strong>Файл:</strong> ${info.file_path || 'Невідомо'}</p>
+                    <p><strong>Листів:</strong> ${info.total_sheets || 0}</p>
+                    <p><strong>Регіони:</strong> ${info.sheet_names ? info.sheet_names.length : 0}</p>
                 `;
             }
             
             regionsListEl.innerHTML = `
                 <h3>🏙️ Доступні регіони</h3>
-                ${info.sheets.map(region => `<div class="region-item">${region}</div>`).join('')}
+                ${info.sheet_names && info.sheet_names.length > 0 ? 
+                    info.sheet_names.map(region => `<div class="region-item">${region}</div>`).join('') :
+                    '<p>Немає доступних регіонів</p>'
+                }
             `;
         }
         
@@ -672,7 +675,7 @@
                         }
                         techInfoMessage += 'ℹ️ <strong>ТЕХНИЧЕСКАЯ ИНФОРМАЦИЯ:</strong><br>';
                         techInfoMessage += `- Листов: ${initData.file_info.total_sheets}<br>`;
-                        techInfoMessage += `- Листы: ${initData.file_info.sheets.join(', ')}`;
+                        techInfoMessage += `- Листы: ${initData.file_info.sheet_names && initData.file_info.sheet_names.length > 0 ? initData.file_info.sheet_names.join(', ') : 'Немає листів'}`;
                         
                         addMessage('bot', techInfoMessage);
                         
@@ -734,7 +737,7 @@
                     }
                     techInfoMessage += 'ℹ️ <strong>ТЕХНИЧЕСКАЯ ИНФОРМАЦИЯ:</strong><br>';
                     techInfoMessage += `- Листов: ${data.file_info.total_sheets}<br>`;
-                    techInfoMessage += `- Листы: ${data.file_info.sheets.join(', ')}`;
+                    techInfoMessage += `- Листы: ${data.file_info.sheet_names && data.file_info.sheet_names.length > 0 ? data.file_info.sheet_names.join(', ') : 'Немає листів'}`;
                     
                     addMessage('bot', techInfoMessage);
                     

@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 
 from .data_processor import ExcelDataProcessor
+from .text_normalizer import TextNormalizer
 from .data_analyzer import DataAnalyzer
 from .prompt_generator import PromptGenerator
 from .query_handler import QueryHandler
